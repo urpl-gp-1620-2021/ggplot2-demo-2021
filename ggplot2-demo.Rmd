@@ -1,0 +1,216 @@
+---
+title: "ggplot2 demo"
+subtitle: "Class 5"
+author: "Maxwell Austensen"
+date: "2021-10-12"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE, fig.height = 5, fig.width = 7)
+library(tidyverse)
+landlords <- read_csv("landlord-watchlist-buildings_2018-12-08.csv") %>% 
+  mutate(landlord_name = str_to_title(landlord)) %>% 
+  group_by(landlord_name) %>% 
+  summarize(
+    buildings = n(),
+    total_units = sum(units),
+    portfolio_units_grp = case_when(
+      total_units <= 10 ~ "10 or fewer",
+      total_units <= 50 ~ "11 - 50",
+      total_units <= 100 ~ "51 to 100",
+      total_units > 100 ~ "More than 100"
+    ) %>% ordered(levels = c("10 or fewer","11 - 50", "51 to 100","More than 100")),
+    avg_bldg_size = mean(units),
+    total_viol = sum(violations),
+    avg_bldg_viol = mean(violations)
+  ) %>% 
+  ungroup() %>% 
+  arrange(desc(buildings))
+
+```
+
+
+class: center, middle
+
+# Plotting with `ggplot2` in **R**
+
+---
+Here is a dataset of the worst landlords in NYC (2018 watchlist)
+```{r tidy=FALSE}
+glimpse(landlords)
+```
+
+---
+
+```{r eval=FALSE, tidy=FALSE}
+ggplot(data = landlords) #<<
+```
+
+Every plot begins with the function `ggplot()` and providing the dataframe you want to use. 
+---
+
+```{r eval=FALSE, tidy=FALSE}
+ggplot(data = landlords) + 
+  aes(x = buildings, y = total_viol) #<<
+```
+
+The second part of every plot is to specify the mapping of columns form the dataframe to aesthetic elements of the plot. This is done with the function `aes()`. Every function call for a ggplot2 plot is added together with `+`.
+
+In the `aes()` function some of the most common aesthetic elements are:
+
+* `x` for the x-axis
+* `y` for the y-axis
+* `color` for the color of data elements (lines, points, and outline of shapes)
+* `fill` for the fill color of shapes
+* `label` for data labels
+* `group` for separate data elements by some grouping variable
+* `shape` for the shape of data points
+* `linetype` for the style
+---
+
+```{r eval=FALSE, tidy=FALSE}
+ggplot(data = landlords) + 
+  aes(x = buildings, y = total_viol) + 
+  geom_point() #<<
+```
+
+The third main element of every plot is the geometries, which determine how the data is displayed on the plot. The geometries are determined by the `geom_*()` functions. Some examples are:
+
+* `geom_point()` for scatter plot
+* `geom_line()` for line graphs
+* `geom_bar()` for bar graphs, usually representing the number of rows by some grouping column
+* `geom_col()` for bar graphs where the height of the bars is specified with a column of the dataframe
+* `geom_histogram()` for histograms
+* `geom_sf()` for a type of spatial dataframe called "simple features" for creating maps, which we'll cover later
+* and many more!
+
+---
+
+```{r tidy=FALSE}
+ggplot(data = landlords) + 
+  aes(x = buildings, y = total_viol) + 
+  geom_point()
+```
+
+---
+class: center, middle
+
+# Some examples
+---
+
+```{r tidy=FALSE}
+ggplot(landlords) + 
+  aes(x = avg_bldg_size, y = avg_bldg_viol) + #<<
+  geom_point()
+```
+
+---
+
+```{r tidy=FALSE}
+ggplot(landlords) + 
+  aes(x = avg_bldg_size, y = avg_bldg_viol, color = total_units) + #<<
+  geom_point()
+```
+
+---
+
+```{r tidy=FALSE}
+ggplot(landlords) + 
+  aes(x = avg_bldg_size, y = avg_bldg_viol, color = portfolio_units_grp) + #<<
+  geom_point()
+```
+
+---
+
+```{r tidy=FALSE}
+ggplot(landlords) + 
+  aes(x = avg_bldg_size, y = avg_bldg_viol, size = total_units) + #<<
+  geom_point()
+```
+
+---
+```{r tidy=FALSE}
+ggplot(landlords) + 
+  aes(x = avg_bldg_size, y = avg_bldg_viol) + 
+  geom_point() #<<
+```
+
+---
+```{r tidy=FALSE}
+ggplot(landlords) + 
+  aes(x = portfolio_units_grp) + 
+  geom_bar() #<<
+```
+
+---
+With `geom_bar()` (and some other geoms) ggplot2 will help by doing some of the aggregation for you. This can be helpful for quickly exploring your data, but sometimes it's helpful to aggregate the data yourself and then plot those results directly. `geom_col()` lets you plot the values directly.
+
+---
+
+```{r tidy=FALSE}
+lls_by_size <- landlords %>% 
+  group_by(portfolio_units_grp) %>% 
+  summarise(n = n())
+
+ggplot(lls_by_size) + 
+  aes(x = portfolio_units_grp, y = n) + 
+  geom_col() #<<
+```
+
+---
+
+```{r message=FALSE, tidy=FALSE}
+ggplot(landlords) + 
+  aes(x = total_units) + 
+  geom_histogram() #<<
+```
+
+---
+
+```{r tidy=FALSE}
+ggplot(landlords) + 
+  aes(y = total_units) + 
+  geom_boxplot() #<<
+```
+
+---
+
+When you use arguments in the `aes()` section you must always refer to columns in the dataframe. When you want to set styles for the graph elements manually, without using values from the dataframe, you must put these outside of the `aes()` section. 
+
+---
+
+```{r tidy=FALSE}
+ggplot(landlords) + 
+  aes(x = portfolio_units_grp) + 
+  geom_bar(fill = "steelblue") #<<
+```
+
+---
+
+You can apply titles and labels to you plot using `labs()`:
+
+```{r fig.height=4, fig.width=8, tidy=FALSE}
+ggplot(landlords) + 
+  aes(x = avg_bldg_size, y = avg_bldg_viol, color = portfolio_units_grp) +
+  geom_point(size = 2) +
+  labs( #<<
+    title = "Average Building size and Average", #<<
+    subtitle = "1973-74 models", #<<
+    x = "Average Building Size in Landlord's Porfolio", #<<
+    y = "Average Violations in Landlord's Buildings", #<<
+    color = "Size of Landlord's Portfolio (Units)", #<<
+    caption = "Source: Public ADvocate's Landlord Watchlist (2018)" #<<
+  ) #<<
+```
+
+---
+class: center, middle
+
+# Live Demo!

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>ggplot2 demo</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Maxwell Austensen" />
+    <meta name="date" content="2021-10-12" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link href="libs/remark-css/default-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# ggplot2 demo
+## Class 5
+### Maxwell Austensen
+### 2021-10-12
+
+---
+
+
+
+
+
+class: center, middle
+
+# Plotting with `ggplot2` in **R**
+
+---
+Here is a dataset of the worst landlords in NYC (2018 watchlist)
+
+```r
+glimpse(landlords)
+```
+
+```
+## Rows: 98
+## Columns: 7
+## $ landlord_name       &lt;chr&gt; "Jonathan Cohen-Silvershore Properties", "Meir Fri…
+## $ buildings           &lt;int&gt; 19, 18, 14, 11, 11, 11, 10, 10, 10, 10, 9, 9, 8, 8…
+## $ total_units         &lt;dbl&gt; 188, 131, 80, 177, 61, 68, 40, 209, 60, 89, 29, 46…
+## $ portfolio_units_grp &lt;ord&gt; More than 100, More than 100, 51 to 100, More than…
+## $ avg_bldg_size       &lt;dbl&gt; 9.894737, 7.277778, 5.714286, 16.090909, 5.545455,…
+## $ total_viol          &lt;dbl&gt; 1090, 718, 565, 734, 516, 413, 526, 721, 312, 551,…
+## $ avg_bldg_viol       &lt;dbl&gt; 57.36842, 39.88889, 40.35714, 66.72727, 46.90909, …
+```
+
+---
+
+
+```r
+*ggplot(data = landlords)
+```
+
+Every plot begins with the function `ggplot()` and providing the dataframe you want to use. 
+---
+
+
+```r
+ggplot(data = landlords) + 
+* aes(x = buildings, y = total_viol)
+```
+
+The second part of every plot is to specify the mapping of columns form the dataframe to aesthetic elements of the plot. This is done with the function `aes()`. Every function call for a ggplot2 plot is added together with `+`.
+
+In the `aes()` function some of the most common aesthetic elements are:
+
+* `x` for the x-axis
+* `y` for the y-axis
+* `color` for the color of data elements (lines, points, and outline of shapes)
+* `fill` for the fill color of shapes
+* `label` for data labels
+* `group` for separate data elements by some grouping variable
+* `shape` for the shape of data points
+* `linetype` for the style
+---
+
+
+```r
+ggplot(data = landlords) + 
+  aes(x = buildings, y = total_viol) + 
+* geom_point()
+```
+
+The third main element of every plot is the geometries, which determine how the data is displayed on the plot. The geometries are determined by the `geom_*()` functions. Some examples are:
+
+* `geom_point()` for scatter plot
+* `geom_line()` for line graphs
+* `geom_bar()` for bar graphs, usually representing the number of rows by some grouping column
+* `geom_col()` for bar graphs where the height of the bars is specified with a column of the dataframe
+* `geom_histogram()` for histograms
+* `geom_sf()` for a type of spatial dataframe called "simple features" for creating maps, which we'll cover later
+* and many more!
+
+---
+
+
+```r
+ggplot(data = landlords) + 
+  aes(x = buildings, y = total_viol) + 
+  geom_point()
+```
+
+![](ggplot2-demo_files/figure-html/unnamed-chunk-5-1.png)&lt;!-- --&gt;
+
+---
+class: center, middle
+
+# Some examples
+---
+
+
+```r
+ggplot(landlords) + 
+* aes(x = avg_bldg_size, y = avg_bldg_viol) +
+  geom_point()
+```
+
+![](ggplot2-demo_files/figure-html/unnamed-chunk-6-1.png)&lt;!-- --&gt;
+
+---
+
+
+```r
+ggplot(landlords) + 
+* aes(x = avg_bldg_size, y = avg_bldg_viol, color = total_units) +
+  geom_point()
+```
+
+![](ggplot2-demo_files/figure-html/unnamed-chunk-7-1.png)&lt;!-- --&gt;
+
+---
+
+
+```r
+ggplot(landlords) + 
+* aes(x = avg_bldg_size, y = avg_bldg_viol, color = portfolio_units_grp) +
+  geom_point()
+```
+
+![](ggplot2-demo_files/figure-html/unnamed-chunk-8-1.png)&lt;!-- --&gt;
+
+---
+
+
+```r
+ggplot(landlords) + 
+* aes(x = avg_bldg_size, y = avg_bldg_viol, size = total_units) +
+  geom_point()
+```
+
+![](ggplot2-demo_files/figure-html/unnamed-chunk-9-1.png)&lt;!-- --&gt;
+
+---
+
+```r
+ggplot(landlords) + 
+  aes(x = avg_bldg_size, y = avg_bldg_viol) + 
+* geom_point()
+```
+
+![](ggplot2-demo_files/figure-html/unnamed-chunk-10-1.png)&lt;!-- --&gt;
+
+---
+
+```r
+ggplot(landlords) + 
+  aes(x = portfolio_units_grp) + 
+* geom_bar()
+```
+
+![](ggplot2-demo_files/figure-html/unnamed-chunk-11-1.png)&lt;!-- --&gt;
+
+---
+With `geom_bar()` (and some other geoms) ggplot2 will help by doing some of the aggregation for you. This can be helpful for quickly exploring your data, but sometimes it's helpful to aggregate the data yourself and then plot those results directly. `geom_col()` lets you plot the values directly.
+
+---
+
+
+```r
+lls_by_size &lt;- landlords %&gt;% 
+  group_by(portfolio_units_grp) %&gt;% 
+  summarise(n = n())
+
+ggplot(lls_by_size) + 
+  aes(x = portfolio_units_grp, y = n) + 
+* geom_col()
+```
+
+![](ggplot2-demo_files/figure-html/unnamed-chunk-12-1.png)&lt;!-- --&gt;
+
+---
+
+
+```r
+ggplot(landlords) + 
+  aes(x = total_units) + 
+* geom_histogram()
+```
+
+![](ggplot2-demo_files/figure-html/unnamed-chunk-13-1.png)&lt;!-- --&gt;
+
+---
+
+
+```r
+ggplot(landlords) + 
+  aes(y = total_units) + 
+* geom_boxplot()
+```
+
+![](ggplot2-demo_files/figure-html/unnamed-chunk-14-1.png)&lt;!-- --&gt;
+
+---
+
+When you use arguments in the `aes()` section you must always refer to columns in the dataframe. When you want to set styles for the graph elements manually, without using values from the dataframe, you must put these outside of the `aes()` section. 
+
+---
+
+
+```r
+ggplot(landlords) + 
+  aes(x = portfolio_units_grp) + 
+* geom_bar(fill = "steelblue")
+```
+
+![](ggplot2-demo_files/figure-html/unnamed-chunk-15-1.png)&lt;!-- --&gt;
+
+---
+
+You can apply titles and labels to you plot using `labs()`:
+
+
+```r
+ggplot(landlords) + 
+  aes(x = avg_bldg_size, y = avg_bldg_viol, color = portfolio_units_grp) +
+  geom_point(size = 2) +
+* labs(
+*   title = "Average Building size and Average",
+*   subtitle = "1973-74 models",
+*   x = "Average Building Size in Landlord's Porfolio",
+*   y = "Average Violations in Landlord's Buildings",
+*   color = "Size of Landlord's Portfolio (Units)",
+*   caption = "Source: Public ADvocate's Landlord Watchlist (2018)"
+* )
+```
+
+![](ggplot2-demo_files/figure-html/unnamed-chunk-16-1.png)&lt;!-- --&gt;
+
+---
+class: center, middle
+
+# Live Demo!
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
